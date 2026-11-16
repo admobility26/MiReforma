@@ -1,0 +1,42 @@
+name: Crear DMG Mi Reforma
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/build-mac.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    name: Compilar Mac M1-M5
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - name: Descargar proyecto
+        uses: actions/checkout@v4
+      - name: Verificar Javascript sin descargar dependencias
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const html=fs.readFileSync('web/mi_reforma.html','utf8');
+          const js=html.split('<script>')[1]?.split('</script>')[0];
+          if(!js)throw Error('Falta el JS de la interfaz');
+          new Function(js);
+          console.log('JavaScript validado');
+          NODE
+      - name: Compilar Swift y construir el DMG
+        run: bash scripts/build-mac.sh
+      - name: Publicar DMG en Releases sin almacenar artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG='v1.0.0'
+          DMG='dist/MiReforma-AppleSilicon.dmg'
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$DMG" --clobber
+          else
+            gh release create "$TAG" "$DMG" --title 'Mi Reforma 1.0.0 - Apple Silicon' --notes 'App local para macOS 13 o superior (M1, M2, M3, M4 y M5). Datos y tickets en carpeta elegida. Firma ad hoc: macOS puede pedir Abrir igualmente. Sin artifacts de Actions.' --latest
+          fi
+          gh release view "$TAG"
