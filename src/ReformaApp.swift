@@ -1,5 +1,6 @@
 import Cocoa
 import WebKit
+import UniformTypeIdentifiers
 
 @MainActor
 final class ReformaApp: NSObject, NSApplicationDelegate, WKScriptMessageHandlerWithReply, WKUIDelegate {
@@ -54,6 +55,25 @@ final class ReformaApp: NSObject, NSApplicationDelegate, WKScriptMessageHandlerW
         NSApp.mainMenu = menu
     }
 
+
+    // WKWebView no abre <input type="file"> sin este delegado nativo en macOS.
+    // Se entrega la selección a WebKit para que File/arrayBuffer funcione
+    // en el JavaScript existente, sin alterar el almacenamiento de gastos.
+    func webView(_ webView: WKWebView, runOpenPanelWith parameters: WKOpenPanelParameters,
+                 initiatedByFrame frame: WKFrameInfo,
+                 completionHandler: @escaping ([URL]?) -> Void) {
+        let panel = NSOpenPanel()
+        panel.title = "Adjuntar tickets a Mi Reforma"
+        panel.message = "Selecciona fotografías o archivos PDF."
+        panel.prompt = "Adjuntar"
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = parameters.allowsMultipleSelection
+        panel.allowedContentTypes = [.image, .pdf]
+        panel.begin { response in
+            completionHandler(response == .OK ? panel.urls : nil)
+        }
+    }
 
     func webView(_ webView: WKWebView, runJavaScriptAlertPanelWithMessage message: String,
                  initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping () -> Void) {
