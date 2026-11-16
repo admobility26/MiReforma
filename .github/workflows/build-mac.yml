@@ -4,6 +4,10 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/build-mac.yml'
+      - 'src/**'
+      - 'web/**'
+      - 'scripts/build-mac.sh'
+      - 'packaging/**'
   workflow_dispatch:
 permissions:
   contents: write
@@ -32,11 +36,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          TAG='v1.0.0'
+          TAG='v1.0.1'
           DMG='dist/MiReforma-AppleSilicon.dmg'
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "$DMG" --clobber
           else
-            gh release create "$TAG" "$DMG" --title 'Mi Reforma 1.0.0 - Apple Silicon' --notes 'App local para macOS 13 o superior (M1, M2, M3, M4 y M5). Datos y tickets en carpeta elegida. Firma ad hoc: macOS puede pedir Abrir igualmente. Sin artifacts de Actions.' --latest
+            gh release create "$TAG" "$DMG" --title 'Mi Reforma 1.0.1 - Apple Silicon' --notes 'App local para macOS 13 o superior (M1, M2, M3, M4 y M5). Selector nativo de tickets corregido. Datos y tickets en carpeta elegida. Firma ad hoc: macOS puede pedir Abrir igualmente. Sin artifacts de Actions.' --latest
           fi
           gh release view "$TAG"
