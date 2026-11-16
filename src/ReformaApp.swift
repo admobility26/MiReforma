@@ -2,7 +2,7 @@ import Cocoa
 import WebKit
 
 @MainActor
-final class ReformaApp: NSObject, NSApplicationDelegate, WKScriptMessageHandlerWithReply {
+final class ReformaApp: NSObject, NSApplicationDelegate, WKScriptMessageHandlerWithReply, WKUIDelegate {
     private var window: NSWindow!
     private var web: WKWebView!
     private var folder: URL?
@@ -16,7 +16,7 @@ final class ReformaApp: NSObject, NSApplicationDelegate, WKScriptMessageHandlerW
         configuration.userContentController = messages
         configuration.defaultWebpagePreferences.allowsContentJavaScript = true
         web = WKWebView(frame: .zero, configuration: configuration)
-        web.setValue(false, forKey: "drawsBackground")
+        web.uiDelegate = self
 
         window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1220, height: 830),
             styleMask: [.titled, .closable, .resizable, .miniaturizable],
@@ -52,6 +52,37 @@ final class ReformaApp: NSObject, NSApplicationDelegate, WKScriptMessageHandlerW
         edit.submenu = editMenu
         menu.addItem(edit)
         NSApp.mainMenu = menu
+    }
+
+
+    func webView(_ webView: WKWebView, runJavaScriptAlertPanelWithMessage message: String,
+                 initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping () -> Void) {
+        alert(message)
+        completionHandler()
+    }
+
+    func webView(_ webView: WKWebView, runJavaScriptConfirmPanelWithMessage message: String,
+                 initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping (Bool) -> Void) {
+        let dialog = NSAlert()
+        dialog.messageText = "Mi Reforma"
+        dialog.informativeText = message
+        dialog.addButton(withTitle: "Confirmar")
+        dialog.addButton(withTitle: "Cancelar")
+        completionHandler(dialog.runModal() == .alertFirstButtonReturn)
+    }
+
+    func webView(_ webView: WKWebView, runJavaScriptTextInputPanelWithPrompt prompt: String,
+                 defaultText: String?, initiatedByFrame frame: WKFrameInfo,
+                 completionHandler: @escaping (String?) -> Void) {
+        let dialog = NSAlert()
+        dialog.messageText = "Mi Reforma"
+        dialog.informativeText = prompt
+        let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 390, height: 25))
+        field.stringValue = defaultText ?? ""
+        dialog.accessoryView = field
+        dialog.addButton(withTitle: "Aceptar")
+        dialog.addButton(withTitle: "Cancelar")
+        completionHandler(dialog.runModal() == .alertFirstButtonReturn ? field.stringValue : nil)
     }
 
     private func alert(_ detail: String) {
